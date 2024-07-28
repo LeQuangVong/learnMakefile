@@ -182,4 +182,197 @@ make clean
 rm app.exe
 ```
 
+### Four stages of compilation in the C Makefile
+
+- Pre-compiling: 
+	- Remove command
+	- Expand (mở rộng) macros
+	- Expand include files
+	- Compile conditional statements (câu lệnh điều kiện)
+	- The result obtained (thu được) is a ```.i``` file.
+- Compilation: The source code will continue to compile from ```.i``` file and obtain a ```.s``` file (assembly)
+- Assembly: Through the ```assembler```, the output we get is a ```.o``` file
+- Linking: 
+	- Each ```.o``` file obtained at the Assembly stage is part of the program.
+	- The ```linking``` stage will link them to obtain a complete executable file
+
+Code:
+```
+#include <stdio.h>
+
+int main(){
+    printf("Hello World");
+}
+```
+
+Makefile:
+```
+.PHONY stage1 stage2 stage3 stage4 all clean
+
+stage1: 
+	gcc -E hello.c -o hello.i       #Pre-compiling
+
+stage2:
+	gcc -S hello.i -o hello.S       #Compiling
+
+stage3:
+	gcc -c hello.S -o hello.o       #Assembly
+
+stage4: 
+	gcc -o hello.exe hello.c        #Linking
+
+all:
+	gcc -o hello.exe hello.c
+clean:
+	rm hello.exe hello.i hello.S hello.o
+```
+
+Run code:
+```
+make -f test6.mk stage1                                                  
+gcc -E hello.c -o hello.i
+
+make -f test6.mk stage2                                                   
+gcc -S hello.i -o hello.S
+
+make -f test6.mk stage3                                                   
+gcc -c hello.S -o hello.o
+
+make -f test6.mk stage4                                                   
+gcc -o hello.exe hello.c
+
+./hello.exe                                                      
+Hello World                             
+```
+
+### Folder structure
+
+```
+.
+├── Inc
+│   ├── hieu.h
+│   └── tong.h
+├── Makefile
+├── Readme.md
+├── Src
+│   ├── hieu.c
+│   └── tong.c
+├── bin
+│   └── out.exe
+├── main.c
+├── makefilerule-e1489805882799.png
+└── obj
+    ├── hieu.o
+    ├── main.o
+    └── tong.o
+```
+
+Code:
+- hieu.h:
+```
+int tinh(int a, int b);
+```
+- tong.h:
+```
+int tinh(int a, int b);
+```
+- tong.c:
+```
+#include <stdio.h>
+int tinh(int a, int b)
+{
+    return a + b;
+}
+```
+- hieu.c:
+```
+#include <stdio.h>
+int tinh(int a, int b)
+{
+    return a - b;
+}
+```
+- main.c:
+```
+#include <stdio.h>
+#include <hieu.h>
+#include <tong.h>
+
+int main()
+{
+    printf("%d",tinh(3,5));
+}
+```
+
+Makefile:
+```
+.PHONY: all
+
+CC := gcc
+INC_FILE := ./Inc/tong.h
+INC_FILE := ./Inc/hieu.h
+
+%.o: $(INC_FILE)
+	$(CC) -c Src/hieu.c -o obj/hieu.o -I./Inc
+	$(CC) -c Src/tong.c -o obj/tong.o -I./Inc
+	$(CC) -c main.c -o obj/main.o -I./Inc
+
+tong: obj/tong.o obj/main.o 
+	$(CC) -o bin/out.exe obj/tong.o obj/main.o
+
+hieu: obj/hieu.o obj/main.o 
+	$(CC) -o bin/out.exe obj/hieu.o obj/main.o
+
+run:
+	./bin/out.exe
+clean:
+	rm ./obj/*.o
+```
+
+- Variable:
+	- The ```CC``` variable is defined to use ```gcc``` as the compiler
+	- Define ```INC_FILE``` variable with path.
+- Implicit rules: ```%.o: $(INC_FILE)```
+	- This line defined the implicit rule for creating ```%.o``` oject file. The target is which files have the ```.o``` extention
+	- Any oject files depend on the path, if the path changes then the files need to be recompiled.
+- Formula:
+	- Each ```$(CC)``` command compiles a different source file (```Src/hieu.c``` ```Src/tong.c``` ```main.c```) into corresponding oject files (```obj/hieu.o``` ```obj/tong.o``` ```obj/main.o```).
+	- The ```-I./Inc``` flag specifiles that the compiler should look for header files in the ```./Inc``` directory.
+
+Run code:
+- Tong:
+```
+make tong                                                     
+gcc -c Src/hieu.c -o obj/hieu.o -I./Inc
+gcc -c Src/tong.c -o obj/tong.o -I./Inc
+gcc -c main.c -o obj/main.o -I./Inc
+gcc -o bin/out.exe obj/tong.o obj/main.o
+
+make run                                                      
+./bin/out.exe
+8
+
+make clean                                                    
+rm ./obj/*.o
+```
+- Hieu:
+```
+make hieu                                                     
+gcc -c Src/hieu.c -o obj/hieu.o -I./Inc
+gcc -c Src/tong.c -o obj/tong.o -I./Inc
+gcc -c main.c -o obj/main.o -I./Inc
+gcc -o bin/out.exe obj/hieu.o obj/main.o
+
+make run                                                      
+./bin/out.exe
+-2     
+
+make clean 
+rm ./obj/*.o
+```
+
+### Why do we have to build the ```.o``` file first ?
+Because after having the ```.o``` file, we can select the ```.o``` file to link with ```linker``` to create an executable program
+
+Ex: link ```tong.o``` and ```main.o``` to create ```out.exe```
 
