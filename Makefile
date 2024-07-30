@@ -1,21 +1,26 @@
 .PHONY: all
 
 CC := gcc
-INC_FILE := ./Inc/tong.h
-INC_FILE := ./Inc/hieu.h
+INC_DIR := ./Inc
+SRC_DIR := ./Src
+OBJ_DIR := ./obj
+BIN_DIR := ./bin
 
-%.o: $(INC_FILE)
-	$(CC) -c Src/hieu.c -o obj/hieu.o -I./Inc
-	$(CC) -c Src/tong.c -o obj/tong.o -I./Inc
-	$(CC) -c main.c -o obj/main.o -I./Inc
+vpath %.c $(SRC_DIR)
+vpath %.h $(INC_DIR)
 
-tong: obj/tong.o obj/main.o 
-	$(CC) -o bin/out.exe obj/tong.o obj/main.o
+OBJ_FILES := $(OBJ_DIR)/hieu.o $(OBJ_DIR)/tong.o $(OBJ_DIR)/main.o
 
-hieu: obj/hieu.o obj/main.o 
-	$(CC) -o bin/out.exe obj/hieu.o obj/main.o
+$(OBJ_DIR)/%.o: %.c $(INC_DIR)/tong.h $(INC_DIR)/hieu.h
+	$(CC) -c $< -o $@ -I$(INC_DIR)
+
+tong: $(OBJ_FILES)
+	$(CC) -o $(BIN_DIR)/out.exe $(OBJ_DIR)/tong.o $(OBJ_DIR)/main.o
+
+hieu: $(OBJ_FILES)
+	$(CC) -o $(BIN_DIR)/out.exe $(OBJ_DIR)/hieu.o $(OBJ_DIR)/main.o
 
 run:
-	./bin/out.exe
+	./$(BIN_DIR)/out.exe
 clean:
-	rm ./obj/*.o
+	rm -f $(BIN_DIR)/*.o $(BIN_DIR)/out.exe

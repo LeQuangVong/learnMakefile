@@ -376,3 +376,62 @@ Because after having the ```.o``` file, we can select the ```.o``` file to link 
 
 Ex: link ```tong.o``` and ```main.o``` to create ```out.exe```
 
+### Update Makefile with ```Vpath``` and ```Automatic variable```
+#### Vpath
+Use Vpath to specify search directories for source and header files, minimizing the need to specify full paths in the rules
+#### Automatic variable
+- ```$@```: the name of current target (Target)
+- ```$<```: the name of the first prerequisite (first prerequisite)
+- ```$^```: list of prerequisites (prerequisites)
+- ```$?```: The list of new prerequisite is larger than the target (new prerequisite)
+
+Use automatic variable avoids having to rewrite file names and makes the formula more flexible.
+
+Update Makefile code:
+```
+.PHONY: all
+
+CC := gcc
+INC_DIR := ./Inc
+SRC_DIR := ./Src
+OBJ_DIR := ./obj
+BIN_DIR := ./bin
+
+vpath %.c $(SRC_DIR)
+vpath %.h $(INC_DIR)
+
+OBJ_FILES := $(OBJ_DIR)/hieu.o $(OBJ_DIR)/tong.o $(OBJ_DIR)/main.o
+
+$(OBJ_DIR)/%.o: %.c $(INC_DIR)/tong.h $(INC_DIR)/hieu.h
+	$(CC) -c $< -o $@ -I$(INC_DIR)
+
+tong: $(OBJ_FILES)
+	$(CC) -o $(BIN_DIR)/out.exe $(OBJ_DIR)/tong.o $(OBJ_DIR)/main.o
+
+hieu: $(OBJ_FILES)
+	$(CC) -o $(BIN_DIR)/out.exe $(OBJ_DIR)/hieu.o $(OBJ_DIR)/main.o
+
+run:
+	./$(BIN_DIR)/out.exe
+clean:
+	rm -f $(BIN_DIR)/*.o $(BIN_DIR)/out.exe
+```
+- Variable difinition:
+	- ```INC_DIR```,```SRC_DIR```, ```OBJ_DIR```, ```BIN_DIR```: Difines directories for header files, source files, object files, and the directory containing the executable files.
+- Vpath:
+	- Vpath specifies the directory into which ```make``` will search for source (```%.c```) and header files (```%.h```). This eliminates the need to specify full paths in rules.
+- General rules for object files:
+	- To create ```.o``` file, ```make``` will look for the corresponding ```.c``` file and header file (```tong.h```, ```hieu.h```) in ```INC_DIR```
+	- ```$<```: is an automatic variable representing the source file (```%.c```)
+	- ```$@```: is an automatic variable representing the object file.
+```
+$(OBJ_DIR)/%.o: %.c $(INC_DIR)/tong.h $(INC_DIR)/hieu.h
+	$(CC) -c $< -o $@ -I$(INC_DIR)
+```
+- Executable file creation rules:
+	- These rules create the ```out.exe``` executable from the corresponding object files (```tong.o``` and ```main.o``` for ```tong```)
+
+```
+tong: $(OBJ_FILES)
+	$(CC) -o $(BIN_DIR)/out.exe $(OBJ_DIR)/tong.o $(OBJ_DIR)/main.o
+```
