@@ -1,5 +1,5 @@
-#include <stdio.h>
-int tinh(int a, int b)
+#include "tong.h"
+int tong(int a, int b)
 {
-    return a + b;
+    printf("a + b = %d\n",a+b);
 }

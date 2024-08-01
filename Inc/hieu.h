@@ -1,1 +1,2 @@
-int tinh(int a, int b);
+#include <stdio.h>
+int hieu(int a, int b);

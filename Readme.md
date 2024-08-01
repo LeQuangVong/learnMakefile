@@ -1,4 +1,4 @@
-## What is Makefile ?
+### What is Makefile ?
 Makefile is a script containing (bao gồm) the following information:
 - File structure (file, dependence)
 - Commands to create files
@@ -475,3 +475,212 @@ clean:
 	- ```INC_FILES := $(wildcard $(INC_DIR)/*.h)```: find all ```.h``` files in ```Inc``` directory.
 - Convert source file to object file:
 	- ```OBJ_FILES := $(patsubst $(SRC_DIR)/*.c, $(OBJ_DIR)/*.o, $(SRC_FILES))```: using ```patsubst``` to convert ```.c``` files in ```SRC_FILES``` to ```.o``` files in ```OBJ_DIR```.
+### Create Makefile with ```Foreach```, ```notdir```
+#### Foreach
+Use ```foreach``` allows iterating through a list of values and performing an action on each value in that list.
+```
+$(foreach var, list, text)
+```
+- ```var```: iterative variable, representing each element in the list.
+- ```list```: List of values to iterate through
+- ```text```: Text or action to be performed for each value in the list.
+#### Notdir
+Using ```notdir``` eliminates the path of the filename, keeping only the filename and extention.
+```
+$(notdir names...)  #names...: list of filenames or full paths
+```
+
+Makefile:
+```
+.PHONY: build clean
+
+CC := gcc
+INC_DIR := ./Inc
+SRC_DIR := ./Src
+OBJ_DIR := ./obj
+BIN_DIR := ./bin
+
+SRC_FILES := $(foreach SRC_DIR, $(SRC_DIR), $(wildcard $(SRC_DIR)/*.c))
+INC_FILES := $(foreach INC_DIR, $(INC_DIR), $(wildcard $(INC_DIR)/*.h))
+
+OBJ_FILES := $(notdir $(SRC_FILES))
+OBJ_FILES := $(subst .c,.o, $(OBJ_FILES))
+PATH_OBJS := $(foreach OBJ_FILES, $(OBJ_FILES), $(OBJ_DIR)/$(OBJ_FILES))
+
+vpath %.c $(SRC_DIR)
+vpath %.h $(INC_DIR)
+
+build: $(OBJ_FILES)
+	$(CC) $(PATH_OBJS) -o $(BIN_DIR)/app.exe
+	./$(BIN_DIR)/app.exe
+
+%.o: %.c $(INC_FILES)
+	$(CC) -I$(INC_DIR) -c $< -o $(OBJ_DIR)/$@
+clean:
+	rm -rf $(BIN_DIR)/* $(OBJ_DIR)/*
+```
+- Declare variables and folders:
+	```
+	CC := gcc
+	INC_DIR := ./Inc
+	SRC_DIR := ./Src
+	OBJ_DIR := ./obj
+	BIN_DIR := ./bin
+	```
+	- ```CC```: variable to specify the compiler
+	- ```INC_DIR```: Directory containing header files (.h)
+	- ```SRC_DIR```: Directory containing source files (.c)
+	- ```OBJ_DIR```: Directory containing object files (.o)
+	- ```BIN_DIR```: Directory containing executable files (.exe)
+- Declare source and header files:
+	```
+	SRC_FILES := $(foreach SRC_DIR, $(SRC_DIR), $(wildcard $(SRC_DIR)/*.c))
+	INC_FILES := $(foreach INC_DIR, $(INC_DIR), $(wildcard $(INC_DIR)/*.h))
+	```
+	- ```SRC_FILES```: Use ```foreach``` and ```wildcard``` to list all ```.c``` files in ```SRC_DIR```.
+	- ```INC_FILES```: Use ```foreach``` and ```wildcard``` to list all ```.h``` files in ```INC_DIR```.
+- Declare object files:
+	```
+	OBJ_FILES := $(notdir $(SRC_FILES))
+	OBJ_FILES := $(subst .c,.o, $(OBJ_FILES))
+	PATH_OBJS := $(foreach OBJ_FILES, $(OBJ_FILES), $(OBJ_DIR)/$(OBJ_FILES))
+	```
+	- ```OBJ_FILES```: use ```notdir``` to remove file path and keep only to file name.
+	- Use ```subst``` to replace ```.c``` with ```.o```, convert source files to corresponding (tương ứng) object files.
+	- ```PATH_OBJS```: Use ```foreach``` to add ```OBJ_DIR``` directory path to each object files.
+- File search rules:
+	```
+	vpath %.c $(SRC_DIR)
+	vpath %.h $(INC_DIR)
+	```
+	- ```vpath```: specifies where to search for source and header files.
+- Build rule:
+	```
+	build: $(OBJ_FILES)
+	$(CC) $(PATH_OBJS) -o $(BIN_DIR)/app.exe
+	./$(BIN_DIR)/app.exe
+	```
+	- ```build```: This target will compile the object files and link them into an executable.
+	- ```$(CC) $(PATH_OBJS) -o $(BIN_DIR)/app.exe```: Link object files into an excutable.
+- Rules for creating object files:
+	```
+	%.o: %.c $(INC_FILES)
+	$(CC) -I$(INC_DIR) -c $< -o $(OBJ_DIR)/$@
+	```
+	- ```%.o: %.c $(INC_FILES)```: Sample rule to compile ```.c``` file to ```.o``` file.
+	- ```$(CC) -I$(INC_DIR) -c $< -o $(OBJ_DIR)/$@```: The command compiles ```.c``` file into ```.o``` file, including the header directory.
+#### Basename 
+Using ```basename``` removes the filename extention, leaving only the filename.
+```
+$(basename names...)   #names...: list of filenames or full paths
+```
+#### Using ```define```, ```call``` create a rule template definition
+- ```Define```: Defines a block of code, similar to defining a function or macro.
+- ```Call```: Calls and evaluates (đánh giá) the defined block of code with specific parameters
+```
+define name
+text ...
+endef
+```
+- ```name```: The name of definition
+- ```text```: the content of the definition, which may include parameters such as ```$(1)```, ```$(2)```,vv
+```
+$(call name, param1, param2,...)
+```
+- ```name```: the name of definition
+- ```param1```, ```param2```: Parameters passed (truyền) to definition
+
+#### Eval
+Helps scale and evaluate dynamic text content, allowing for efficient and flexible creation of rules and variations
+```
+$(eval test)
+```
+### Makefile use automatic variable
+```
+.PHONY: build clean
+
+CC := gcc
+INC_DIR := ./Inc
+SRC_DIR := ./Src
+OBJ_DIR := ./obj
+BIN_DIR := ./bin
+
+SRC_FILES := $(wildcard $(SRC_DIR)/*.c)
+INC_FILES := $(wildcard $(INC_DIR)/*.h)
+
+OBJ_FILES := $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(SRC_FILES))
+
+vpath %.c $(SRC_DIR)
+vpath %.h $(INC_DIR)
+
+build: $(OBJ_FILES)
+	$(CC) $(OBJ_FILES) -o $(BIN_DIR)/app.exe
+	./$(BIN_DIR)/app.exe
+
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c $(INC_FILES)
+	$(CC) -I$(INC_DIR) -c $< -o $@
+
+clean:
+	rm -f $(OBJ_DIR)/*.o $(BIN_DIR)/app.exe
+```
+- Declare variables and folders:
+	```
+	CC := gcc
+	INC_DIR := ./Inc
+	SRC_DIR := ./Src
+	OBJ_DIR := ./obj
+	BIN_DIR := ./bin
+	```
+	- ```CC```: variable to specify the compiler
+	- ```INC_DIR```: Directory containing header files (.h)
+	- ```SRC_DIR```: Directory containing source files (.c)
+	- ```OBJ_DIR```: Directory containing object files (.o)
+	- ```BIN_DIR```: Directory containing executable files (.exe)
+- Declare source and header files:
+	```
+	SRC_FILES := $(wildcard $(SRC_DIR)/*.c)
+	INC_FILES := $(wildcard $(INC_DIR)/*.h)
+	```
+	- ```SRC_FILES```: Use ```wildcard``` to search all ```.c``` files in ```SRC_DIR``` and save into ```SRC_FILES```
+	- ```INC_FILES```: Use ```wildcard``` to search all ```.h``` files in ```INC_DIR``` and save into ```INC_FILES```.
+- Declare object file:
+	```
+	OBJ_FILES := $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(SRC_FILES))
+	```
+	- ```OBJ_FILES```: use ```patsubst``` to convert ```.c``` file in ```SRC_DIR``` to corresponing ```.o``` file in ```OBJ_DIR```
+
+- File search rules:
+	```
+	vpath %.c $(SRC_DIR)
+	vpath %.h $(INC_DIR)
+	```
+	- ```vpath```: specifies where to search for source and header files.
+- Build rule:
+	```
+	build: $(OBJ_FILES)
+	$(CC) $(OBJ_FILES) -o $(BIN_DIR)/app.exe
+	./$(BIN_DIR)/app.exe
+	```
+	- ```build```: This target will compile the object files and link them into an executable.
+	- ```$(CC) $(OBJ_FILES) -o $(BIN_DIR)/app.exe```: Link object files into an excutable.
+- Rules for creating object files:
+	```
+	$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c $(INC_FILES)
+		$(CC) -I$(INC_DIR) -c $< -o $@
+	```
+	- ```$(OBJ_DIR)/%.o: %.c $(INC_FILES)```: Sample rule to compile ```.c``` file to ```.o``` file. ```.o``` file will be saved in ```OBJ_DIR``` directory.
+	- ```$(CC) -I$(INC_DIR) -c $< -o $@```: The command compiles ```.c``` file into ```.o``` file, including the header directory.
+	- ```$<``` represents the source file and ```$@``` represents the object file.
+
+- ```%```: Represents a portion of the filename that the makefile can change dynamically, allows you to define rules for multiple files without having to list them one by one.
+Ex:
+```
+$(OBJ_DIR)/file.o = $(OBJ_DIR)/%.o
+$(OBJ_DIR)/file.c = $(OBJ_DIR)/%.c
+```
+- ```*```: used to list files in directories that have a certain extention.
+Ex:
+```
+SRC_FILES := $(wildcard $(SRC_DIR)/*.c)
+INC_FILES := $(wildcard $(INC_DIR)/*.h)
+```
